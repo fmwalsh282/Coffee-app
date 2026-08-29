@@ -1,14 +1,14 @@
 {
   "name": "Coffee Bean Tracker",
   "short_name": "Coffee Beans",
-  "start_url": "/Coffee-app/",
-  "scope": "/Coffee-app/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fafaf9",
   "theme_color": "#d97706",
   "icons": [
     {
-      "src": "/Coffee-app/favicon.svg",
+      "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
