@@ -55,7 +55,21 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
         </label>
 
         <label className="flex flex-col gap-1 sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700 dark:text-stone-300">Tasting notes</span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+              Tasting notes
+            </span>
+            {name.trim() && (
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(`${name.trim()} coffee tasting notes`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-amber-700 hover:underline dark:text-amber-500"
+              >
+                Search the web ↗
+              </a>
+            )}
+          </div>
           <textarea
             value={tastingNotes}
             onChange={(e) => setTastingNotes(e.target.value)}
