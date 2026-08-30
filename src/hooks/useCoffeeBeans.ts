@@ -1,36 +1,35 @@
 import { useEffect, useState } from 'react'
 import type { CoffeeBean, NewCoffeeBean } from '../types'
 
-const STORAGE_KEY = 'coffee-beans'
-
-function loadBeans(): CoffeeBean[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as CoffeeBean[]) : []
-  } catch {
-    return []
-  }
-}
-
 export function useCoffeeBeans() {
-  const [beans, setBeans] = useState<CoffeeBean[]>(loadBeans)
+  const [beans, setBeans] = useState<CoffeeBean[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(beans))
-  }, [beans])
+    fetch('/api/beans')
+      .then((res) => res.json())
+      .then((data: CoffeeBean[]) => setBeans(data))
+      .catch(() => setBeans([]))
+      .finally(() => setLoading(false))
+  }, [])
 
-  function addBean(bean: NewCoffeeBean) {
-    const newBean: CoffeeBean = {
-      ...bean,
-      id: crypto.randomUUID(),
-      dateAdded: new Date().toISOString(),
+  async function addBean(bean: NewCoffeeBean) {
+    const res = await fetch('/api/beans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bean),
+    })
+    if (res.ok) {
+      setBeans((await res.json()) as CoffeeBean[])
     }
-    setBeans((prev) => [newBean, ...prev])
   }
 
-  function removeBean(id: string) {
-    setBeans((prev) => prev.filter((bean) => bean.id !== id))
+  async function removeBean(id: string) {
+    const res = await fetch(`/api/beans?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    if (res.ok) {
+      setBeans((await res.json()) as CoffeeBean[])
+    }
   }
 
-  return { beans, addBean, removeBean }
+  return { beans, loading, addBean, removeBean }
 }

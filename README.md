@@ -1,9 +1,9 @@
 # Coffee Bean Tracker
 
 A small app for logging coffee beans you've tried: name, tasting notes, ideal
-brew time, ideal grind size, and your rating. Beans are saved in your
-browser's local storage, and you can look up tasting notes for a bean online
-instead of typing them in by hand.
+brew time, ideal grind size, and your rating. Everyone with the app's link
+shares the same list (stored in Vercel Blob, not per-browser), and you can
+look up tasting notes for a bean online instead of typing them in by hand.
 
 ## Local development
 
@@ -14,33 +14,47 @@ npm run dev
 
 Open the printed URL (usually http://localhost:5173).
 
-The "Search online" button calls a serverless API route (`api/search-bean.ts`)
-that isn't served by `npm run dev` — for that to work locally you need the
-[Vercel CLI](https://vercel.com/docs/cli):
+Neither the bean list nor "Search online" work under plain `npm run dev`,
+since both are serverless API routes (`api/beans.ts`, `api/search-bean.ts`).
+For those to work locally, use the [Vercel CLI](https://vercel.com/docs/cli)
+instead:
 
 ```bash
 npm install -g vercel
 vercel dev
 ```
 
-Either way, the API route needs an `ANTHROPIC_API_KEY` — see below.
+This needs the same environment variables as production (`ANTHROPIC_API_KEY`
+and a Blob store connection) — see below.
 
 ## Deploying to Vercel
 
-This app needs a backend to look up tasting notes (the browser can't call the
-Anthropic API directly, and GitHub Pages can't run server code), so it's set
-up to deploy on [Vercel](https://vercel.com), which hosts the static app and
-the `api/` serverless function together.
+This app needs a backend both to look up tasting notes and to store the
+shared bean list (the browser can't call the Anthropic API directly, and
+GitHub Pages can't run server code or a database), so it's set up to deploy
+on [Vercel](https://vercel.com), which hosts the static app and the `api/`
+serverless functions together.
 
 1. Create a free Vercel account and **import this GitHub repo** as a new
    project (Vercel auto-detects the Vite framework — no config needed).
 2. In the project's **Settings → Environment Variables**, add:
    - `ANTHROPIC_API_KEY` — your key from
      [console.anthropic.com](https://console.anthropic.com/settings/keys)
-3. Deploy. Vercel gives you a URL like `https://your-app.vercel.app`.
+3. In the project's **Storage** tab, create a **Blob** store and connect it
+   to this project — Vercel adds the required `BLOB_READ_WRITE_TOKEN`
+   environment variable automatically.
+4. Deploy (or redeploy if you already had). Vercel gives you a URL like
+   `https://your-app.vercel.app`.
 
 To use it on an iPhone: open that URL in **Safari**, tap **Share → Add to
 Home Screen**. It'll launch full-screen with its own icon.
+
+## Shared list
+
+The bean list lives in a single JSON blob in Vercel Blob storage
+(`api/beans.ts`), not in each visitor's browser — so anyone with the app's
+link sees and edits the same list. There's no login, so anyone with the
+link can add or remove beans.
 
 ## How the online search works
 

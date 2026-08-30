@@ -4,7 +4,7 @@ import { BeanForm } from './components/BeanForm'
 import { useCoffeeBeans } from './hooks/useCoffeeBeans'
 
 function App() {
-  const { beans, addBean, removeBean } = useCoffeeBeans()
+  const { beans, loading, addBean, removeBean } = useCoffeeBeans()
   const [showForm, setShowForm] = useState(false)
 
   const sortedBeans = [...beans].sort((a, b) => b.rating - a.rating)
@@ -42,7 +42,11 @@ function App() {
           />
         )}
 
-        {sortedBeans.length === 0 ? (
+        {loading ? (
+          <p className="rounded-xl border border-dashed border-stone-300 p-10 text-center text-stone-400 dark:border-stone-700 dark:text-stone-500">
+            Loading…
+          </p>
+        ) : sortedBeans.length === 0 ? (
           <p className="rounded-xl border border-dashed border-stone-300 p-10 text-center text-stone-400 dark:border-stone-700 dark:text-stone-500">
             No beans yet. Add the first one you've tried!
           </p>
