@@ -9,6 +9,7 @@ interface CoffeeBean {
   grindSize: number
   rating: number
   dateAdded: string
+  imageUrl: string | null
 }
 
 const BEANS_PATHNAME = 'beans.json'
@@ -52,6 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       grindSize: Number(body.grindSize) || 0,
       rating: Number(body.rating) || 0,
       dateAdded: new Date().toISOString(),
+      imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : null,
     }
 
     const beans = await readBeans()

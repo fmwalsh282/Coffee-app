@@ -12,6 +12,7 @@ interface SearchBeanResult {
   found: boolean
   tastingNotes: string
   source: string | null
+  imageUrl: string | null
 }
 
 type LookupState =
@@ -27,6 +28,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
   const [brewSeconds, setBrewSeconds] = useState('')
   const [grindSize, setGrindSize] = useState('')
   const [rating, setRating] = useState(0)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' })
 
   const totalSeconds = Number(brewSeconds) || 0
@@ -64,6 +66,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
       }
 
       setTastingNotes(result.tastingNotes)
+      setImageUrl(result.imageUrl)
       setLookup({ status: 'found', source: result.source })
     } catch {
       setLookup({ status: 'error', message: 'Could not reach the lookup service.' })
@@ -79,6 +82,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
       brewTimeSeconds: totalSeconds,
       grindSize: grindSizeValue,
       rating,
+      imageUrl,
     })
   }
 
@@ -140,6 +144,22 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
               )}{' '}
               — check it before saving.
             </p>
+          )}
+          {imageUrl && (
+            <div className="mt-1 flex items-center gap-3">
+              <img
+                src={imageUrl}
+                alt=""
+                className="h-16 w-16 rounded-lg border border-stone-200 object-cover dark:border-stone-700"
+              />
+              <button
+                type="button"
+                onClick={() => setImageUrl(null)}
+                className="text-xs font-medium text-stone-500 underline hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
+              >
+                Remove photo
+              </button>
+            </div>
           )}
           {lookup.status === 'not-found' && (
             <p className="text-xs text-stone-500 dark:text-stone-400">

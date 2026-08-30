@@ -18,6 +18,14 @@ export function BeanCard({ bean, onRemove }: BeanCardProps) {
         ✕
       </button>
 
+      {bean.imageUrl && (
+        <img
+          src={bean.imageUrl}
+          alt=""
+          className="-mx-5 -mt-5 mb-4 h-40 w-[calc(100%+2.5rem)] rounded-t-xl object-cover"
+        />
+      )}
+
       <h3 className="pr-6 text-lg font-semibold text-stone-900 dark:text-stone-100">
         {bean.name}
       </h3>
