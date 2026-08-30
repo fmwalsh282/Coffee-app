@@ -2,26 +2,45 @@ import { useState } from 'react'
 import { BeanCard } from './components/BeanCard'
 import { BeanForm } from './components/BeanForm'
 import { useCoffeeBeans } from './hooks/useCoffeeBeans'
+import type { CoffeeBean } from './types'
+
+function randomBackgroundUrl(): string {
+  const cacheBuster = Math.floor(Math.random() * 1_000_000)
+  return `https://loremflickr.com/1920/1080/cafe,coffeeshop?random=${cacheBuster}`
+}
 
 function App() {
-  const { beans, loading, addBean, removeBean } = useCoffeeBeans()
+  const { beans, loading, addBean, updateBean, removeBean } = useCoffeeBeans()
   const [showForm, setShowForm] = useState(false)
+  const [editingBean, setEditingBean] = useState<CoffeeBean | null>(null)
+  const [backgroundUrl] = useState(randomBackgroundUrl)
 
   const sortedBeans = [...beans].sort((a, b) => b.rating - a.rating)
+  const isFormOpen = showForm || editingBean !== null
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingBean(null)
+  }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+    <div className="relative min-h-screen">
+      <div
+        className="fixed inset-0 -z-10 bg-stone-800 bg-cover bg-center"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${backgroundUrl})`,
+        }}
+      />
+
       <div className="mx-auto max-w-3xl px-4 py-10">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
-              ☕ Coffee Bean Tracker
-            </h1>
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <h1 className="text-2xl font-bold text-white drop-shadow">☕ Coffee Bean Tracker</h1>
+            <p className="text-sm text-white/80 drop-shadow">
               {beans.length} bean{beans.length === 1 ? '' : 's'} tried
             </p>
           </div>
-          {!showForm && (
+          {!isFormOpen && (
             <button
               type="button"
               onClick={() => setShowForm(true)}
@@ -32,28 +51,33 @@ function App() {
           )}
         </header>
 
-        {showForm && (
+        {isFormOpen && (
           <BeanForm
-            onAdd={(bean) => {
-              addBean(bean)
-              setShowForm(false)
+            initialBean={editingBean ?? undefined}
+            onSubmit={(bean) => {
+              if (editingBean) {
+                updateBean(editingBean.id, bean)
+              } else {
+                addBean(bean)
+              }
+              closeForm()
             }}
-            onCancel={() => setShowForm(false)}
+            onCancel={closeForm}
           />
         )}
 
         {loading ? (
-          <p className="rounded-xl border border-dashed border-stone-300 p-10 text-center text-stone-400 dark:border-stone-700 dark:text-stone-500">
+          <p className="rounded-xl border border-dashed border-white/30 bg-black/20 p-10 text-center text-white/80 backdrop-blur-sm">
             Loading…
           </p>
         ) : sortedBeans.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-stone-300 p-10 text-center text-stone-400 dark:border-stone-700 dark:text-stone-500">
+          <p className="rounded-xl border border-dashed border-white/30 bg-black/20 p-10 text-center text-white/80 backdrop-blur-sm">
             No beans yet. Add the first one you've tried!
           </p>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
             {sortedBeans.map((bean) => (
-              <BeanCard key={bean.id} bean={bean} onRemove={removeBean} />
+              <BeanCard key={bean.id} bean={bean} onEdit={setEditingBean} onRemove={removeBean} />
             ))}
           </ul>
         )}

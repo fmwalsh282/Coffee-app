@@ -24,6 +24,17 @@ export function useCoffeeBeans() {
     }
   }
 
+  async function updateBean(id: string, bean: NewCoffeeBean) {
+    const res = await fetch(`/api/beans?id=${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bean),
+    })
+    if (res.ok) {
+      setBeans((await res.json()) as CoffeeBean[])
+    }
+  }
+
   async function removeBean(id: string) {
     const res = await fetch(`/api/beans?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
     if (res.ok) {
@@ -31,5 +42,5 @@ export function useCoffeeBeans() {
     }
   }
 
-  return { beans, loading, addBean, removeBean }
+  return { beans, loading, addBean, updateBean, removeBean }
 }

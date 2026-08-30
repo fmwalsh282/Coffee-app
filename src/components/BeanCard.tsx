@@ -3,20 +3,31 @@ import { StarRating } from './StarRating'
 
 interface BeanCardProps {
   bean: CoffeeBean
+  onEdit: (bean: CoffeeBean) => void
   onRemove: (id: string) => void
 }
 
-export function BeanCard({ bean, onRemove }: BeanCardProps) {
+export function BeanCard({ bean, onEdit, onRemove }: BeanCardProps) {
   return (
-    <li className="group relative rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
-      <button
-        type="button"
-        onClick={() => onRemove(bean.id)}
-        aria-label={`Remove ${bean.name}`}
-        className="absolute right-3 top-3 text-stone-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 focus:opacity-100"
-      >
-        ✕
-      </button>
+    <li className="relative rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+      <div className="absolute right-3 top-3 flex gap-1 rounded-full bg-white/80 p-1 backdrop-blur-sm dark:bg-stone-900/70">
+        <button
+          type="button"
+          onClick={() => onEdit(bean)}
+          aria-label={`Edit ${bean.name}`}
+          className="px-1 text-stone-500 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-500"
+        >
+          ✎
+        </button>
+        <button
+          type="button"
+          onClick={() => onRemove(bean.id)}
+          aria-label={`Remove ${bean.name}`}
+          className="px-1 text-stone-500 hover:text-red-500 dark:text-stone-400 dark:hover:text-red-500"
+        >
+          ✕
+        </button>
+      </div>
 
       {bean.imageUrl && (
         <img
@@ -26,7 +37,7 @@ export function BeanCard({ bean, onRemove }: BeanCardProps) {
         />
       )}
 
-      <h3 className="pr-6 text-lg font-semibold text-stone-900 dark:text-stone-100">
+      <h3 className="pr-14 text-lg font-semibold text-stone-900 dark:text-stone-100">
         {bean.name}
       </h3>
 

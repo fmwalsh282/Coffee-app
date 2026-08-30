@@ -63,6 +63,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  if (req.method === 'PUT') {
+    const id = typeof req.query.id === 'string' ? req.query.id : undefined
+    const body = req.body as Partial<CoffeeBean> | undefined
+    if (!id || !body || typeof body.name !== 'string' || !body.name.trim()) {
+      res.status(400).json({ error: 'A bean id and name are required.' })
+      return
+    }
+
+    const beans = await readBeans()
+    const index = beans.findIndex((bean) => bean.id === id)
+    if (index === -1) {
+      res.status(404).json({ error: 'Bean not found.' })
+      return
+    }
+
+    const updated = [...beans]
+    updated[index] = {
+      ...updated[index],
+      name: body.name.trim(),
+      tastingNotes: typeof body.tastingNotes === 'string' ? body.tastingNotes.trim() : '',
+      brewTimeSeconds: Number(body.brewTimeSeconds) || 0,
+      grindSize: Number(body.grindSize) || 0,
+      rating: Number(body.rating) || 0,
+      imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : null,
+    }
+    await writeBeans(updated)
+    res.status(200).json(updated)
+    return
+  }
+
   if (req.method === 'DELETE') {
     const id = typeof req.query.id === 'string' ? req.query.id : undefined
     if (!id) {

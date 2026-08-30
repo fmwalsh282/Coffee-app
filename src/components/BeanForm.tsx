@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { NewCoffeeBean } from '../types'
+import type { CoffeeBean, NewCoffeeBean } from '../types'
 import { StarRating } from './StarRating'
 
 interface BeanFormProps {
-  onAdd: (bean: NewCoffeeBean) => void
+  initialBean?: CoffeeBean
+  onSubmit: (bean: NewCoffeeBean) => void
   onCancel: () => void
 }
 
@@ -22,13 +23,16 @@ type LookupState =
   | { status: 'not-found' }
   | { status: 'error'; message: string }
 
-export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
-  const [name, setName] = useState('')
-  const [tastingNotes, setTastingNotes] = useState('')
-  const [brewSeconds, setBrewSeconds] = useState('')
-  const [grindSize, setGrindSize] = useState('')
-  const [rating, setRating] = useState(0)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+export function BeanForm({ initialBean, onSubmit, onCancel }: BeanFormProps) {
+  const isEditing = Boolean(initialBean)
+  const [name, setName] = useState(initialBean?.name ?? '')
+  const [tastingNotes, setTastingNotes] = useState(initialBean?.tastingNotes ?? '')
+  const [brewSeconds, setBrewSeconds] = useState(
+    initialBean ? String(initialBean.brewTimeSeconds) : '',
+  )
+  const [grindSize, setGrindSize] = useState(initialBean ? String(initialBean.grindSize) : '')
+  const [rating, setRating] = useState(initialBean?.rating ?? 0)
+  const [imageUrl, setImageUrl] = useState<string | null>(initialBean?.imageUrl ?? null)
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' })
 
   const totalSeconds = Number(brewSeconds) || 0
@@ -76,7 +80,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isValid) return
-    onAdd({
+    onSubmit({
       name: name.trim(),
       tastingNotes: tastingNotes.trim(),
       brewTimeSeconds: totalSeconds,
@@ -92,7 +96,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
       className="mb-8 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-800"
     >
       <h2 className="mb-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
-        Add a coffee bean
+        {isEditing ? 'Edit coffee bean' : 'Add a coffee bean'}
       </h2>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -226,7 +230,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
           disabled={!isValid}
           className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Save bean
+          {isEditing ? 'Save changes' : 'Save bean'}
         </button>
       </div>
     </form>
