@@ -19,10 +19,14 @@ function App() {
 
   return (
     <div className="relative min-h-screen">
-      <div
-        className="fixed inset-0 -z-10 bg-stone-900 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/cafe-background.svg)' }}
-      />
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-[#3a2717]">
+        <img
+          src="/cafe-background.svg"
+          alt=""
+          className="h-full w-full object-contain object-center"
+        />
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
 
       <div className="mx-auto max-w-3xl px-4 py-10">
         <header className="mb-8 flex items-center justify-between">
