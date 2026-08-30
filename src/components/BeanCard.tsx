@@ -6,14 +6,6 @@ interface BeanCardProps {
   onRemove: (id: string) => void
 }
 
-function formatBrewTime(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  if (minutes === 0) return `${seconds}s`
-  if (seconds === 0) return `${minutes}m`
-  return `${minutes}m ${seconds}s`
-}
-
 export function BeanCard({ bean, onRemove }: BeanCardProps) {
   return (
     <li className="group relative rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
@@ -42,7 +34,7 @@ export function BeanCard({ bean, onRemove }: BeanCardProps) {
         <div>
           <dt className="text-stone-400 dark:text-stone-500">Brew time</dt>
           <dd className="font-medium text-stone-700 dark:text-stone-200">
-            {formatBrewTime(bean.brewTimeSeconds)}
+            {bean.brewTimeSeconds}s
           </dd>
         </div>
         <div>

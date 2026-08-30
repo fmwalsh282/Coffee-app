@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { GRIND_SIZES } from '../types'
-import type { GrindSize, NewCoffeeBean } from '../types'
+import type { NewCoffeeBean } from '../types'
 import { StarRating } from './StarRating'
 
 interface BeanFormProps {
@@ -25,14 +24,20 @@ type LookupState =
 export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
   const [name, setName] = useState('')
   const [tastingNotes, setTastingNotes] = useState('')
-  const [brewMinutes, setBrewMinutes] = useState('')
   const [brewSeconds, setBrewSeconds] = useState('')
-  const [grindSize, setGrindSize] = useState<GrindSize>('Medium')
+  const [grindSize, setGrindSize] = useState('')
   const [rating, setRating] = useState(0)
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' })
 
-  const totalSeconds = (Number(brewMinutes) || 0) * 60 + (Number(brewSeconds) || 0)
-  const isValid = name.trim().length > 0 && totalSeconds > 0 && rating > 0
+  const totalSeconds = Number(brewSeconds) || 0
+  const grindSizeValue = Number(grindSize) || 0
+  const isValid =
+    name.trim().length > 0 &&
+    totalSeconds > 0 &&
+    totalSeconds <= 60 &&
+    grindSizeValue >= 1 &&
+    grindSizeValue <= 40 &&
+    rating > 0
 
   async function handleSearch() {
     const trimmedName = name.trim()
@@ -72,7 +77,7 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
       name: name.trim(),
       tastingNotes: tastingNotes.trim(),
       brewTimeSeconds: totalSeconds,
-      grindSize,
+      grindSize: grindSizeValue,
       rating,
     })
   }
@@ -146,48 +151,40 @@ export function BeanForm({ onAdd, onCancel }: BeanFormProps) {
           )}
         </label>
 
-        <div className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
             Ideal brew time
           </span>
           <div className="flex items-center gap-2">
             <input
               type="number"
-              min={0}
-              value={brewMinutes}
-              onChange={(e) => setBrewMinutes(e.target.value)}
-              placeholder="min"
-              className="w-20 rounded-lg border border-stone-300 px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-            />
-            <span className="text-stone-500">min</span>
-            <input
-              type="number"
-              min={0}
-              max={59}
+              min={1}
+              max={60}
               value={brewSeconds}
               onChange={(e) => setBrewSeconds(e.target.value)}
               placeholder="sec"
-              className="w-20 rounded-lg border border-stone-300 px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+              className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
             />
-            <span className="text-stone-500">sec</span>
+            <span className="text-stone-500">sec (max 60)</span>
           </div>
-        </div>
+        </label>
 
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
             Ideal grind size
           </span>
-          <select
-            value={grindSize}
-            onChange={(e) => setGrindSize(e.target.value as GrindSize)}
-            className="rounded-lg border border-stone-300 px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-          >
-            {GRIND_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={40}
+              value={grindSize}
+              onChange={(e) => setGrindSize(e.target.value)}
+              placeholder="1-40"
+              className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+            />
+            <span className="text-stone-500">(1 = fine, 40 = coarse)</span>
+          </div>
         </label>
 
         <div className="flex flex-col gap-1 sm:col-span-2">
