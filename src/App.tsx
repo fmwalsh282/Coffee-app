@@ -4,16 +4,10 @@ import { BeanForm } from './components/BeanForm'
 import { useCoffeeBeans } from './hooks/useCoffeeBeans'
 import type { CoffeeBean } from './types'
 
-function randomBackgroundUrl(): string {
-  const cacheBuster = Math.floor(Math.random() * 1_000_000)
-  return `https://loremflickr.com/1920/1080/cafe,coffeeshop?random=${cacheBuster}`
-}
-
 function App() {
   const { beans, loading, addBean, updateBean, removeBean } = useCoffeeBeans()
   const [showForm, setShowForm] = useState(false)
   const [editingBean, setEditingBean] = useState<CoffeeBean | null>(null)
-  const [backgroundUrl] = useState(randomBackgroundUrl)
 
   const sortedBeans = [...beans].sort((a, b) => b.rating - a.rating)
   const isFormOpen = showForm || editingBean !== null
@@ -26,10 +20,8 @@ function App() {
   return (
     <div className="relative min-h-screen">
       <div
-        className="fixed inset-0 -z-10 bg-stone-800 bg-cover bg-center"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${backgroundUrl})`,
-        }}
+        className="fixed inset-0 -z-10 bg-stone-900 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/cafe-background.svg)' }}
       />
 
       <div className="mx-auto max-w-3xl px-4 py-10">
