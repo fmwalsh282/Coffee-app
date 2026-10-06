@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2f5d50"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M22 14v14a6 6 0 0 0 12 0V14M28 14v36"/><path d="M44 50V14c-5 3-7 10-7 18h7"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2f5d50"/>
+  <!-- thought bubble -->
+  <g fill="#fbf7ef">
+    <circle cx="170" cy="250" r="92"/>
+    <circle cx="250" cy="170" r="104"/>
+    <circle cx="350" cy="190" r="94"/>
+    <circle cx="390" cy="285" r="78"/>
+    <circle cx="310" cy="335" r="84"/>
+    <circle cx="210" cy="330" r="80"/>
+    <rect x="170" y="190" width="220" height="150"/>
+    <circle cx="112" cy="408" r="30"/>
+    <circle cx="70" cy="460" r="17"/>
+  </g>
+  <!-- chopsticks -->
+  <g stroke="#7a4a2c" stroke-width="11" stroke-linecap="round">
+    <line x1="268" y1="200" x2="410" y2="108"/>
+    <line x1="272" y1="214" x2="420" y2="138"/>
+  </g>
+  <!-- noodles lifted from the bowl -->
+  <g fill="none" stroke="#e9b23a" stroke-width="9" stroke-linecap="round">
+    <path d="M238 272 c-10 -18 10 -30 0 -48 s10 -26 30 -20"/>
+    <path d="M256 272 c-10 -18 10 -30 0 -48 s8 -20 18 -16"/>
+    <path d="M274 272 c-10 -18 10 -30 0 -50"/>
+  </g>
+  <!-- bowl -->
+  <path d="M172 268 H368 A98 92 0 0 1 172 268 Z" fill="#d9573a"/>
+  <rect x="236" y="352" width="68" height="16" rx="6" fill="#b8432a"/>
+  <ellipse cx="270" cy="268" rx="98" ry="14" fill="#b8432a"/>
+  <path d="M196 300 H344" stroke="#f3d9c9" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+</svg>
