@@ -9,7 +9,7 @@ interface Restaurant {
   suburb: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
-  accessible: boolean
+  accessible: 'yes' | 'outside' | 'no'
   occasions: string[]
   notes: string
   dateAdded: string
@@ -27,6 +27,7 @@ async function readRestaurants(): Promise<Restaurant[]> {
   // Older entries kept a single "cuisine" string; read those as a one-item list.
   return stored.map(({ cuisine, ...r }) => ({
     ...r,
+    accessible: toAccess(r.accessible),
     cuisines: Array.isArray(r.cuisines) ? r.cuisines : cuisine ? [cuisine] : [],
   }))
 }
@@ -56,6 +57,13 @@ function safeUrl(value: unknown): string {
   }
 }
 
+/** Older entries stored accessible as true/false. */
+function toAccess(value: unknown): Restaurant['accessible'] {
+  if (value === true || value === 'yes') return 'yes'
+  if (value === 'outside') return 'outside'
+  return 'no'
+}
+
 function cleanList(value: unknown): string[] {
   const seen = new Map<string, string>()
   for (const item of Array.isArray(value) ? value : []) {
@@ -73,7 +81,7 @@ function cleanFields(body: Partial<Restaurant>) {
     cuisines: cleanList(body.cuisines),
     suburb: text(body.suburb, 60),
     rating: Math.min(5, Math.max(0, rating)),
-    accessible: body.accessible === true,
+    accessible: toAccess(body.accessible),
     occasions: cleanList(body.occasions),
     notes: text(body.notes, 1000),
   }

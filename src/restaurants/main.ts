@@ -1,4 +1,4 @@
-import type { Restaurant, RestaurantInput } from './types'
+import type { Access, Restaurant, RestaurantInput } from './types'
 
 type SortKey = 'name' | 'cuisines' | 'suburb' | 'rating' | 'occasions' | 'accessible'
 type Filter = 'all' | 'been' | 'want'
@@ -70,6 +70,9 @@ const listOf = (value: unknown) => (Array.isArray(value) ? value.filter((v): v i
 const occasionsOf = (r: Restaurant) => listOf(r.occasions)
 const cuisinesOf = (r: Restaurant) => listOf(r.cuisines)
 const hasBeen = (r: Restaurant) => r.rating > 0
+const ACCESS_LABEL: Record<Access, string> = { yes: 'Yes', outside: 'Outside only', no: 'No' }
+const ACCESS_RANK: Record<Access, number> = { yes: 2, outside: 1, no: 0 }
+const accessOf = (r: Restaurant): Access => (r.accessible in ACCESS_LABEL ? r.accessible : 'no')
 
 /** Distinct values, first spelling wins, ignoring case. */
 function distinct(values: string[]): string[] {
@@ -88,8 +91,8 @@ function compare(a: Restaurant, b: Restaurant): number {
   const dir = sort.dir === 'asc' ? 1 : -1
   const byName = a.name.localeCompare(b.name)
   if (sort.key === 'rating' || sort.key === 'accessible') {
-    const x = sort.key === 'rating' ? a.rating : Number(a.accessible)
-    const y = sort.key === 'rating' ? b.rating : Number(b.accessible)
+    const x = sort.key === 'rating' ? a.rating : ACCESS_RANK[accessOf(a)]
+    const y = sort.key === 'rating' ? b.rating : ACCESS_RANK[accessOf(b)]
     return x !== y ? (x - y) * dir : byName
   }
   const value = (r: Restaurant) =>
@@ -155,7 +158,7 @@ function renderRow(r: Restaurant): HTMLTableRowElement {
   }
 
   const accessible = el('td', 'c-access')
-  accessible.append(el('span', `pill ${r.accessible ? 'yes' : 'no'}`, r.accessible ? 'Yes' : 'No'))
+  accessible.append(el('span', `pill ${accessOf(r)}`, ACCESS_LABEL[accessOf(r)]))
 
   const edit = el('td', 'c-edit')
   const editButton = el('button', 'btn edit', 'Edit')
@@ -334,7 +337,7 @@ function openForm(r: Restaurant | null) {
   field('f-suburb').value = r?.suburb ?? ''
   $<HTMLTextAreaElement>('f-notes').value = r?.notes ?? ''
   field(`f-r${Math.min(5, Math.max(0, r?.rating ?? 0))}`).checked = true
-  field(r?.accessible ? 'f-ay' : 'f-an').checked = true
+  field({ yes: 'f-ay', outside: 'f-ao', no: 'f-an' }[r ? accessOf(r) : 'no']).checked = true
 
   renderChoices('foodChoices', 'food', allCuisines(), r ? cuisinesOf(r) : [])
   renderChoices('occChoices', 'occ', allOccasions(), r ? occasionsOf(r) : [])
@@ -392,7 +395,7 @@ function readForm(): RestaurantInput | null {
     cuisines: readChoices('food'),
     suburb: field('f-suburb').value.trim(),
     rating: Number(form.querySelector<HTMLInputElement>('input[name=rating]:checked')?.value ?? 0),
-    accessible: field('f-ay').checked,
+    accessible: (form.querySelector<HTMLInputElement>('input[name=accessible]:checked')?.value ?? 'no') as Access,
     occasions: readChoices('occ'),
     notes: $<HTMLTextAreaElement>('f-notes').value.trim(),
   }

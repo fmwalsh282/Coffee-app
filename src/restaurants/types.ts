@@ -1,3 +1,5 @@
+export type Access = 'yes' | 'outside' | 'no'
+
 export interface Restaurant {
   id: string
   name: string
@@ -6,7 +8,7 @@ export interface Restaurant {
   suburb: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
-  accessible: boolean
+  accessible: Access
   occasions: string[]
   notes: string
   dateAdded: string
