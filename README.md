@@ -56,6 +56,21 @@ The bean list lives in a single JSON blob in Vercel Blob storage
 link sees and edits the same list. There's no login, so anyone with the
 link can add or remove beans.
 
+## Places to Eat (restaurant list)
+
+A second page, at `/restaurants.html` on the same deployment (for example
+`https://your-app.vercel.app/restaurants.html`), keeps a shared list of
+restaurants you want to try or have been to: name and website, type of food,
+suburb, rating out of 5 (or "want to go"), occasions, whether it's accessible,
+and notes. Every column can be sorted, and the list can be filtered by
+been / want to go, by occasion, or by searching.
+
+It works the same way as the bean list: the data is one JSON blob
+(`restaurants.json`) in the same Vercel Blob store, read and written by
+`api/restaurants.ts`. Anyone with the link can view, add, edit and delete,
+with no sign-in. No extra setup is needed beyond what the bean list already
+uses. Open pages refresh every 30 seconds to pick up other people's changes.
+
 ## How the online search works
 
 The "Search online" button sends the bean name to `api/search-bean.ts`,

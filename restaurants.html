@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/restaurant-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2f5d50" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Places to Eat" />
+    <title>Places to Eat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" />
+    <link rel="stylesheet" href="/src/restaurants/restaurants.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Places to Eat</h1>
+          <p class="summary" id="summary">Loading the list…</p>
+        </div>
+        <button class="btn primary" id="addBtn" type="button" disabled>+ Add a restaurant</button>
+      </header>
+
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search name, food, suburb or notes" aria-label="Search">
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="been" aria-pressed="false">Been</button>
+          <button type="button" data-f="want" aria-pressed="false">Want to go</button>
+        </div>
+        <label class="occpick">Occasion
+          <select id="occSel" aria-label="Filter by occasion"><option value="">Any</option></select>
+        </label>
+        <label class="sortpick">Sort
+          <select id="sortSel" aria-label="Sort by">
+            <option value="name:asc">Name A–Z</option>
+            <option value="name:desc">Name Z–A</option>
+            <option value="cuisine:asc">Type of food</option>
+            <option value="suburb:asc">Suburb</option>
+            <option value="rating:desc">Rating, best first</option>
+            <option value="rating:asc">Want to go first</option>
+            <option value="occasions:asc">Occasion</option>
+            <option value="accessible:desc">Accessible first</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="tablebox">
+        <table>
+          <thead>
+            <tr>
+              <th data-k="name"><button type="button">Name <span class="arrow">↕</span></button></th>
+              <th data-k="cuisine"><button type="button">Type of food <span class="arrow">↕</span></button></th>
+              <th data-k="suburb"><button type="button">Suburb <span class="arrow">↕</span></button></th>
+              <th data-k="rating"><button type="button">Rating <span class="arrow">↕</span></button></th>
+              <th data-k="occasions"><button type="button">Occasion <span class="arrow">↕</span></button></th>
+              <th data-k="accessible"><button type="button">Accessible <span class="arrow">↕</span></button></th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty">
+          <h2>No restaurants yet</h2>
+          <p>Places you add appear here for everyone with the link. Use “Add a restaurant” to start the list.</p>
+        </div>
+      </div>
+      <p class="status" id="status" hidden></p>
+    </div>
+
+    <dialog id="dlg">
+      <form id="form" method="dialog" novalidate>
+        <h2 id="dlgTitle">Add a restaurant</h2>
+        <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required maxlength="120" autocomplete="off"></div>
+        <div class="field"><label for="f-url">Website</label><input id="f-url" name="url" type="url" placeholder="https://…" maxlength="400" autocomplete="off"></div>
+        <div class="row2">
+          <div class="field"><label for="f-cuisine">Type of food</label><input id="f-cuisine" name="cuisine" maxlength="60" placeholder="e.g. Thai, Italian" list="cuisines" autocomplete="off"></div>
+          <div class="field"><label for="f-suburb">Suburb</label><input id="f-suburb" name="suburb" maxlength="60" list="suburbs" autocomplete="off"></div>
+        </div>
+        <datalist id="cuisines"></datalist><datalist id="suburbs"></datalist>
+        <div class="field"><span>Rating</span>
+          <div class="choice" role="radiogroup" aria-label="Rating">
+            <label class="wantopt"><input type="radio" name="rating" value="0" id="f-r0" checked><span>Want to go</span></label>
+            <label><input type="radio" name="rating" value="1" id="f-r1"><span>1 ★</span></label>
+            <label><input type="radio" name="rating" value="2" id="f-r2"><span>2 ★</span></label>
+            <label><input type="radio" name="rating" value="3" id="f-r3"><span>3 ★</span></label>
+            <label><input type="radio" name="rating" value="4" id="f-r4"><span>4 ★</span></label>
+            <label><input type="radio" name="rating" value="5" id="f-r5"><span>5 ★</span></label>
+          </div>
+        </div>
+        <div class="field"><span>Occasion <small style="font-weight:400;color:var(--muted)">(pick any that fit)</small></span>
+          <div class="choice" id="occChoices" role="group" aria-label="Occasion"></div>
+          <input id="f-occ-other" placeholder="Add your own, e.g. Late night, Business lunch" maxlength="120" autocomplete="off" aria-label="Add your own occasions, separated by commas">
+        </div>
+        <div class="field"><span>Accessible</span>
+          <div class="choice" role="radiogroup" aria-label="Accessible">
+            <label><input type="radio" name="accessible" value="yes" id="f-ay"><span>Yes</span></label>
+            <label><input type="radio" name="accessible" value="no" id="f-an" checked><span>No</span></label>
+          </div>
+        </div>
+        <div class="field"><label for="f-notes">Other notes</label><textarea id="f-notes" name="notes" maxlength="1000"></textarea></div>
+        <p class="err" id="formErr" hidden></p>
+        <div class="actions">
+          <button type="button" class="btn danger" id="delBtn" hidden>Delete</button>
+          <div class="right">
+            <button type="button" class="btn" id="cancelBtn">Cancel</button>
+            <button type="submit" class="btn primary" id="saveBtn">Save</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+    <script type="module" src="/src/restaurants/main.ts"></script>
+  </body>
+</html>
