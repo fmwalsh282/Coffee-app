@@ -64,7 +64,7 @@ restaurants you want to try or have been to: name and website, type of food,
 suburb, rating out of 5 (or "want to go"), occasions, whether it's accessible (yes, outside only, or no),
 and notes. A restaurant can have several types of food (e.g. Peruvian and
 Chinese) and shows up under each one in the Food filter. Every column can be
-sorted, and the list can be filtered by been / want to go, type of food,
+sorted, and the list can be filtered by been / want to go, type of food, accessibility,
 occasion, or by searching. Each entry has an Edit button.
 
 It works the same way as the bean list: the data is one JSON blob

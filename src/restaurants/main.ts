@@ -27,6 +27,7 @@ let loaded = false
 let filter: Filter = 'all'
 let occasionFilter = ''
 let foodFilter = ''
+let accessFilter: Access | '' = ''
 let sort: Sort = { key: 'name', dir: 'asc' }
 let editingId: string | null = null
 
@@ -194,6 +195,7 @@ function render() {
 
   const query = $<HTMLInputElement>('q').value.trim().toLowerCase()
   let visible = restaurants.filter((r) => filter === 'all' || (filter === 'been' ? hasBeen(r) : !hasBeen(r)))
+  if (accessFilter) visible = visible.filter((r) => accessOf(r) === accessFilter)
   if (foodFilter) visible = visible.filter((r) => cuisinesOf(r).some((c) => c.toLowerCase() === foodFilter))
   if (occasionFilter) visible = visible.filter((r) => occasionsOf(r).some((o) => o.toLowerCase() === occasionFilter))
   if (query) {
@@ -307,6 +309,10 @@ document.querySelectorAll<HTMLButtonElement>('.seg button').forEach((button) =>
     render()
   }),
 )
+$<HTMLSelectElement>('accessSel').addEventListener('change', (e) => {
+  accessFilter = (e.target as HTMLSelectElement).value as Access | ''
+  render()
+})
 $<HTMLSelectElement>('foodSel').addEventListener('change', (e) => {
   foodFilter = (e.target as HTMLSelectElement).value
   render()
