@@ -74,6 +74,10 @@ tbody tr:hover td { background: var(--accent-soft); }
 .pill.no { color: var(--muted); border: 1px solid var(--line); }
 .notes { color: var(--muted); max-width: 32ch; }
 .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.edit { padding: 4px 12px; font-size: 14px; color: var(--accent); border-color: var(--accent); font-weight: 600; }
+td.c-edit { width: 1%; white-space: nowrap; }
+.sub { font-weight: 400; color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .tag { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 13px; background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
 .occpick select, .occpick { color: var(--muted); }
 .occpick select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); }
@@ -115,6 +119,7 @@ dialog h2 { font: 700 22px var(--display); margin: 0; }
   td.c-type, td.c-suburb { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
   td.c-type:empty, td.c-suburb:empty, td.c-notes:empty { display: none; }
   td.c-type::before { content: "Food: "; }
+  td.c-edit { grid-column: 1 / -1; width: auto; justify-self: end; }
   td.c-suburb::before { content: "Suburb: "; }
   td.c-access { grid-column: 1 / -1; }
   td.c-occ { grid-column: 1 / -1; }

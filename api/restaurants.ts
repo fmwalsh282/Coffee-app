@@ -5,7 +5,7 @@ interface Restaurant {
   id: string
   name: string
   url: string
-  cuisine: string
+  cuisines: string[]
   suburb: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
@@ -23,7 +23,12 @@ async function readRestaurants(): Promise<Restaurant[]> {
   // Query string keeps the blob CDN from serving a stale copy after a write.
   const res = await fetch(`${blobs[0].url}?t=${Date.now()}`, { cache: 'no-store' })
   if (!res.ok) return []
-  return (await res.json()) as Restaurant[]
+  const stored = (await res.json()) as (Restaurant & { cuisine?: string })[]
+  // Older entries kept a single "cuisine" string; read those as a one-item list.
+  return stored.map(({ cuisine, ...r }) => ({
+    ...r,
+    cuisines: Array.isArray(r.cuisines) ? r.cuisines : cuisine ? [cuisine] : [],
+  }))
 }
 
 async function writeRestaurants(restaurants: Restaurant[]): Promise<void> {
@@ -51,22 +56,25 @@ function safeUrl(value: unknown): string {
   }
 }
 
-function cleanFields(body: Partial<Restaurant>) {
-  const occasions = Array.isArray(body.occasions) ? body.occasions : []
+function cleanList(value: unknown): string[] {
   const seen = new Map<string, string>()
-  for (const occasion of occasions) {
-    const value = text(occasion, 40)
-    if (value && !seen.has(value.toLowerCase())) seen.set(value.toLowerCase(), value)
+  for (const item of Array.isArray(value) ? value : []) {
+    const clean = text(item, 40)
+    if (clean && !seen.has(clean.toLowerCase())) seen.set(clean.toLowerCase(), clean)
   }
+  return [...seen.values()].slice(0, 12)
+}
+
+function cleanFields(body: Partial<Restaurant>) {
   const rating = Math.round(Number(body.rating) || 0)
   return {
     name: text(body.name, 120),
     url: safeUrl(body.url),
-    cuisine: text(body.cuisine, 60),
+    cuisines: cleanList(body.cuisines),
     suburb: text(body.suburb, 60),
     rating: Math.min(5, Math.max(0, rating)),
     accessible: body.accessible === true,
-    occasions: [...seen.values()].slice(0, 12),
+    occasions: cleanList(body.occasions),
     notes: text(body.notes, 1000),
   }
 }

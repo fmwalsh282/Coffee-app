@@ -2,7 +2,7 @@ export interface Restaurant {
   id: string
   name: string
   url: string
-  cuisine: string
+  cuisines: string[]
   suburb: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number

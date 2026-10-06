@@ -32,6 +32,9 @@
           <button type="button" data-f="been" aria-pressed="false">Been</button>
           <button type="button" data-f="want" aria-pressed="false">Want to go</button>
         </div>
+        <label class="occpick">Food
+          <select id="foodSel" aria-label="Filter by type of food"><option value="">Any</option></select>
+        </label>
         <label class="occpick">Occasion
           <select id="occSel" aria-label="Filter by occasion"><option value="">Any</option></select>
         </label>
@@ -39,7 +42,7 @@
           <select id="sortSel" aria-label="Sort by">
             <option value="name:asc">Name A–Z</option>
             <option value="name:desc">Name Z–A</option>
-            <option value="cuisine:asc">Type of food</option>
+            <option value="cuisines:asc">Type of food</option>
             <option value="suburb:asc">Suburb</option>
             <option value="rating:desc">Rating, best first</option>
             <option value="rating:asc">Want to go first</option>
@@ -54,12 +57,13 @@
           <thead>
             <tr>
               <th data-k="name"><button type="button">Name <span class="arrow">↕</span></button></th>
-              <th data-k="cuisine"><button type="button">Type of food <span class="arrow">↕</span></button></th>
+              <th data-k="cuisines"><button type="button">Type of food <span class="arrow">↕</span></button></th>
               <th data-k="suburb"><button type="button">Suburb <span class="arrow">↕</span></button></th>
               <th data-k="rating"><button type="button">Rating <span class="arrow">↕</span></button></th>
               <th data-k="occasions"><button type="button">Occasion <span class="arrow">↕</span></button></th>
               <th data-k="accessible"><button type="button">Accessible <span class="arrow">↕</span></button></th>
               <th>Notes</th>
+              <th><span class="visually-hidden">Edit</span></th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -77,11 +81,12 @@
         <h2 id="dlgTitle">Add a restaurant</h2>
         <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required maxlength="120" autocomplete="off"></div>
         <div class="field"><label for="f-url">Website</label><input id="f-url" name="url" type="url" placeholder="https://…" maxlength="400" autocomplete="off"></div>
-        <div class="row2">
-          <div class="field"><label for="f-cuisine">Type of food</label><input id="f-cuisine" name="cuisine" maxlength="60" placeholder="e.g. Thai, Italian" list="cuisines" autocomplete="off"></div>
-          <div class="field"><label for="f-suburb">Suburb</label><input id="f-suburb" name="suburb" maxlength="60" list="suburbs" autocomplete="off"></div>
+        <div class="field"><span>Type of food <small class="sub">(pick all that apply)</small></span>
+          <div class="choice" id="foodChoices" role="group" aria-label="Type of food"></div>
+          <input id="f-food-other" placeholder="Add a type, e.g. Peruvian, Chinese" maxlength="120" autocomplete="off" aria-label="Add types of food, separated by commas">
         </div>
-        <datalist id="cuisines"></datalist><datalist id="suburbs"></datalist>
+        <div class="field"><label for="f-suburb">Suburb</label><input id="f-suburb" name="suburb" maxlength="60" list="suburbs" autocomplete="off"></div>
+        <datalist id="suburbs"></datalist>
         <div class="field"><span>Rating</span>
           <div class="choice" role="radiogroup" aria-label="Rating">
             <label class="wantopt"><input type="radio" name="rating" value="0" id="f-r0" checked><span>Want to go</span></label>
@@ -92,7 +97,7 @@
             <label><input type="radio" name="rating" value="5" id="f-r5"><span>5 ★</span></label>
           </div>
         </div>
-        <div class="field"><span>Occasion <small style="font-weight:400;color:var(--muted)">(pick any that fit)</small></span>
+        <div class="field"><span>Occasion <small class="sub">(pick any that fit)</small></span>
           <div class="choice" id="occChoices" role="group" aria-label="Occasion"></div>
           <input id="f-occ-other" placeholder="Add your own, e.g. Late night, Business lunch" maxlength="120" autocomplete="off" aria-label="Add your own occasions, separated by commas">
         </div>

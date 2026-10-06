@@ -1,6 +1,6 @@
 import type { Restaurant, RestaurantInput } from './types'
 
-type SortKey = 'name' | 'cuisine' | 'suburb' | 'rating' | 'occasions' | 'accessible'
+type SortKey = 'name' | 'cuisines' | 'suburb' | 'rating' | 'occasions' | 'accessible'
 type Filter = 'all' | 'been' | 'want'
 interface Sort {
   key: SortKey
@@ -26,12 +26,14 @@ let restaurants: Restaurant[] = []
 let loaded = false
 let filter: Filter = 'all'
 let occasionFilter = ''
+let foodFilter = ''
 let sort: Sort = { key: 'name', dir: 'asc' }
 let editingId: string | null = null
 
 try {
   const saved = JSON.parse(localStorage.getItem('pte-view') ?? 'null') as { sort?: Sort; filter?: Filter } | null
-  if (saved?.sort) sort = saved.sort
+  const keys: SortKey[] = ['name', 'cuisines', 'suburb', 'rating', 'occasions', 'accessible']
+  if (saved?.sort && keys.includes(saved.sort.key)) sort = saved.sort
   if (saved?.filter) filter = saved.filter
 } catch {
   // Storage unavailable; use defaults.
@@ -64,17 +66,23 @@ function safeUrl(value: string): string {
   }
 }
 
-const occasionsOf = (r: Restaurant) => (Array.isArray(r.occasions) ? r.occasions.filter((o) => o.trim()) : [])
+const listOf = (value: unknown) => (Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && !!v.trim()) : [])
+const occasionsOf = (r: Restaurant) => listOf(r.occasions)
+const cuisinesOf = (r: Restaurant) => listOf(r.cuisines)
 const hasBeen = (r: Restaurant) => r.rating > 0
 
-function allOccasions(): string[] {
+/** Distinct values, first spelling wins, ignoring case. */
+function distinct(values: string[]): string[] {
   const seen = new Map<string, string>()
-  for (const o of [...PRESET_OCCASIONS, ...restaurants.flatMap(occasionsOf)]) {
-    const key = o.trim().toLowerCase()
-    if (!seen.has(key)) seen.set(key, o.trim())
+  for (const v of values) {
+    const key = v.trim().toLowerCase()
+    if (key && !seen.has(key)) seen.set(key, v.trim())
   }
   return [...seen.values()]
 }
+
+const allOccasions = () => distinct([...PRESET_OCCASIONS, ...restaurants.flatMap(occasionsOf)])
+const allCuisines = () => distinct(restaurants.flatMap(cuisinesOf)).sort((a, b) => a.localeCompare(b))
 
 function compare(a: Restaurant, b: Restaurant): number {
   const dir = sort.dir === 'asc' ? 1 : -1
@@ -85,8 +93,8 @@ function compare(a: Restaurant, b: Restaurant): number {
     return x !== y ? (x - y) * dir : byName
   }
   const value = (r: Restaurant) =>
-    sort.key === 'occasions'
-      ? occasionsOf(r).map((o) => o.toLowerCase()).sort().join(', ')
+    sort.key === 'occasions' || sort.key === 'cuisines'
+      ? (sort.key === 'occasions' ? occasionsOf(r) : cuisinesOf(r)).map((o) => o.toLowerCase()).sort().join(', ')
       : String(r[sort.key] ?? '').toLowerCase()
   const x = value(a)
   const y = value(b)
@@ -113,7 +121,6 @@ function renderSummary() {
 
 function renderRow(r: Restaurant): HTMLTableRowElement {
   const tr = el('tr')
-  tr.tabIndex = 0
   tr.dataset.id = r.id
 
   const name = el('td', 'c-name name')
@@ -150,14 +157,21 @@ function renderRow(r: Restaurant): HTMLTableRowElement {
   const accessible = el('td', 'c-access')
   accessible.append(el('span', `pill ${r.accessible ? 'yes' : 'no'}`, r.accessible ? 'Yes' : 'No'))
 
+  const edit = el('td', 'c-edit')
+  const editButton = el('button', 'btn edit', 'Edit')
+  editButton.type = 'button'
+  editButton.setAttribute('aria-label', `Edit ${r.name}`)
+  edit.append(editButton)
+
   tr.append(
     name,
-    el('td', 'c-type', r.cuisine),
+    el('td', 'c-type', cuisinesOf(r).join(', ')),
     el('td', 'c-suburb', r.suburb),
     rating,
     occasions,
     accessible,
     el('td', 'c-notes notes', r.notes),
+    edit,
   )
   return tr
 }
@@ -177,10 +191,11 @@ function render() {
 
   const query = $<HTMLInputElement>('q').value.trim().toLowerCase()
   let visible = restaurants.filter((r) => filter === 'all' || (filter === 'been' ? hasBeen(r) : !hasBeen(r)))
+  if (foodFilter) visible = visible.filter((r) => cuisinesOf(r).some((c) => c.toLowerCase() === foodFilter))
   if (occasionFilter) visible = visible.filter((r) => occasionsOf(r).some((o) => o.toLowerCase() === occasionFilter))
   if (query) {
     visible = visible.filter((r) =>
-      [r.name, r.cuisine, r.suburb, r.notes, occasionsOf(r).join(' ')].some((v) => v.toLowerCase().includes(query)),
+      [r.name, cuisinesOf(r).join(' '), r.suburb, r.notes, occasionsOf(r).join(' ')].some((v) => v.toLowerCase().includes(query)),
     )
   }
   visible.sort(compare)
@@ -211,21 +226,23 @@ function render() {
   const sortValue = `${sort.key}:${sort.dir}`
   if ([...sortSelect.options].some((o) => o.value === sortValue)) sortSelect.value = sortValue
 
-  fillDatalist('cuisines', restaurants.map((r) => r.cuisine))
   fillDatalist('suburbs', restaurants.map((r) => r.suburb))
+  foodFilter = fillFilter('foodSel', allCuisines(), foodFilter)
+  occasionFilter = fillFilter('occSel', allOccasions(), occasionFilter)
+}
 
-  const occasionSelect = $<HTMLSelectElement>('occSel')
-  occasionSelect.length = 1
-  for (const o of allOccasions()) {
-    const option = el('option', undefined, o)
-    option.value = o.toLowerCase()
-    occasionSelect.append(option)
+/** Refill a filter dropdown, keeping the current choice if it still exists. */
+function fillFilter(id: string, values: string[], current: string): string {
+  const select = $<HTMLSelectElement>(id)
+  select.length = 1
+  for (const v of values) {
+    const option = el('option', undefined, v)
+    option.value = v.toLowerCase()
+    select.append(option)
   }
-  occasionSelect.value = occasionFilter
-  if (occasionSelect.value !== occasionFilter) {
-    occasionFilter = ''
-    occasionSelect.value = ''
-  }
+  select.value = current
+  if (select.value !== current) select.value = ''
+  return select.value
 }
 
 function showStatus(message: string | null) {
@@ -287,6 +304,10 @@ document.querySelectorAll<HTMLButtonElement>('.seg button').forEach((button) =>
     render()
   }),
 )
+$<HTMLSelectElement>('foodSel').addEventListener('change', (e) => {
+  foodFilter = (e.target as HTMLSelectElement).value
+  render()
+})
 $<HTMLSelectElement>('occSel').addEventListener('change', (e) => {
   occasionFilter = (e.target as HTMLSelectElement).value
   render()
@@ -310,27 +331,13 @@ function openForm(r: Restaurant | null) {
   $('dlgTitle').textContent = r ? 'Edit restaurant' : 'Add a restaurant'
   field('f-name').value = r?.name ?? ''
   field('f-url').value = r?.url ?? ''
-  field('f-cuisine').value = r?.cuisine ?? ''
   field('f-suburb').value = r?.suburb ?? ''
   $<HTMLTextAreaElement>('f-notes').value = r?.notes ?? ''
   field(`f-r${Math.min(5, Math.max(0, r?.rating ?? 0))}`).checked = true
   field(r?.accessible ? 'f-ay' : 'f-an').checked = true
 
-  const chosen = new Set((r ? occasionsOf(r) : []).map((o) => o.toLowerCase()))
-  const box = $('occChoices')
-  box.textContent = ''
-  allOccasions().forEach((o, i) => {
-    const label = el('label', 'occ')
-    const input = el('input')
-    input.type = 'checkbox'
-    input.name = 'occ'
-    input.id = `f-occ-${i}`
-    input.value = o
-    input.checked = chosen.has(o.toLowerCase())
-    label.append(input, el('span', undefined, o))
-    box.append(label)
-  })
-  field('f-occ-other').value = ''
+  renderChoices('foodChoices', 'food', allCuisines(), r ? cuisinesOf(r) : [])
+  renderChoices('occChoices', 'occ', allOccasions(), r ? occasionsOf(r) : [])
 
   const del = $('delBtn')
   del.hidden = !r
@@ -339,6 +346,31 @@ function openForm(r: Restaurant | null) {
   showFormError(null)
   dialog.showModal()
   field('f-name').focus()
+}
+
+/** Tick-box chips for each option, plus an "add your own" box (id `f-<name>-other`). */
+function renderChoices(boxId: string, name: string, options: string[], chosen: string[]) {
+  const picked = new Set(chosen.map((o) => o.toLowerCase()))
+  $(boxId).replaceChildren(
+    ...distinct([...options, ...chosen]).map((o, i) => {
+      const label = el('label', 'occ')
+      const input = el('input')
+      input.type = 'checkbox'
+      input.name = name
+      input.id = `f-${name}-${i}`
+      input.value = o
+      input.checked = picked.has(o.toLowerCase())
+      label.append(input, el('span', undefined, o))
+      return label
+    }),
+  )
+  field(`f-${name}-other`).value = ''
+}
+
+function readChoices(name: string): string[] {
+  const picked = [...form.querySelectorAll<HTMLInputElement>(`input[name=${name}]:checked`)].map((i) => i.value)
+  const typed = field(`f-${name}-other`).value.split(',')
+  return distinct([...picked, ...typed].map((o) => o.trim().slice(0, 40))).slice(0, 12)
 }
 
 function readForm(): RestaurantInput | null {
@@ -354,20 +386,14 @@ function readForm(): RestaurantInput | null {
     field('f-url').focus()
     return null
   }
-  const occasions = new Map<string, string>()
-  const picked = [...form.querySelectorAll<HTMLInputElement>('input[name=occ]:checked')].map((i) => i.value)
-  for (const o of [...picked, ...field('f-occ-other').value.split(',')]) {
-    const value = o.trim().slice(0, 40)
-    if (value && !occasions.has(value.toLowerCase())) occasions.set(value.toLowerCase(), value)
-  }
   return {
     name,
     url: rawUrl ? safeUrl(rawUrl) : '',
-    cuisine: field('f-cuisine').value.trim(),
+    cuisines: readChoices('food'),
     suburb: field('f-suburb').value.trim(),
     rating: Number(form.querySelector<HTMLInputElement>('input[name=rating]:checked')?.value ?? 0),
     accessible: field('f-ay').checked,
-    occasions: [...occasions.values()].slice(0, 12),
+    occasions: readChoices('occ'),
     notes: $<HTMLTextAreaElement>('f-notes').value.trim(),
   }
 }
@@ -380,10 +406,6 @@ $('rows').addEventListener('click', (e) => {
   const row = target.closest('tr')
   const r = restaurants.find((x) => x.id === row?.dataset.id)
   if (r) openForm(r)
-})
-$('rows').addEventListener('keydown', (e) => {
-  const target = e.target as HTMLElement
-  if (e.key === 'Enter' && target.tagName === 'TR') target.click()
 })
 
 form.addEventListener('submit', async (e) => {

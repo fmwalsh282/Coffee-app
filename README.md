@@ -62,8 +62,10 @@ A second page, at `/restaurants.html` on the same deployment (for example
 `https://your-app.vercel.app/restaurants.html`), keeps a shared list of
 restaurants you want to try or have been to: name and website, type of food,
 suburb, rating out of 5 (or "want to go"), occasions, whether it's accessible,
-and notes. Every column can be sorted, and the list can be filtered by
-been / want to go, by occasion, or by searching.
+and notes. A restaurant can have several types of food (e.g. Peruvian and
+Chinese) and shows up under each one in the Food filter. Every column can be
+sorted, and the list can be filtered by been / want to go, type of food,
+occasion, or by searching. Each entry has an Edit button.
 
 It works the same way as the bean list: the data is one JSON blob
 (`restaurants.json`) in the same Vercel Blob store, read and written by
