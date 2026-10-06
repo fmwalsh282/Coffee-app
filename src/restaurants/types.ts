@@ -6,6 +6,10 @@ export interface Restaurant {
   url: string
   cuisines: string[]
   suburb: string
+  address: string
+  /** Map position; approx means only the suburb was found. Null if not found. */
+  location: { lat: number; lng: number; approx: boolean } | null
+  geoKey: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
   accessible: Access
@@ -14,4 +18,4 @@ export interface Restaurant {
   dateAdded: string
 }
 
-export type RestaurantInput = Omit<Restaurant, 'id' | 'dateAdded'>
+export type RestaurantInput = Omit<Restaurant, 'id' | 'dateAdded' | 'location' | 'geoKey'>

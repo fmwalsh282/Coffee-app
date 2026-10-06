@@ -67,6 +67,14 @@ Chinese) and shows up under each one in the Food filter. Every column can be
 sorted, and the list can be filtered by been / want to go, type of food, accessibility,
 occasion, or by searching. Each entry has an Edit button.
 
+The **Map** button shows every restaurant in the current (filtered) list as a
+pin on an OpenStreetMap map. Positions come from OpenStreetMap's free Nominatim
+geocoder (searches limited to Australia, see `api/_geocode.ts`): the optional
+street address if one is given, otherwise the restaurant's name in its suburb,
+otherwise the middle of the suburb (shown as an approximate pin). A place is
+looked up when it's saved; places saved before the map existed are looked up
+a few at a time when the map is opened.
+
 It works the same way as the bean list: the data is one JSON blob
 (`restaurants.json`) in the same Vercel Blob store, read and written by
 `api/restaurants.ts`. Anyone with the link can view, add, edit and delete,

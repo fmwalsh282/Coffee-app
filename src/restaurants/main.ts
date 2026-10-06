@@ -1,3 +1,5 @@
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import type { Access, Restaurant, RestaurantInput } from './types'
 
 type SortKey = 'name' | 'cuisines' | 'suburb' | 'rating' | 'occasions' | 'accessible'
@@ -190,9 +192,8 @@ function fillDatalist(id: string, values: string[]) {
   }
 }
 
-function render() {
-  renderSummary()
-
+/** The restaurants that pass the current filters and search, in the current sort order. */
+function visibleRestaurants(): Restaurant[] {
   const query = $<HTMLInputElement>('q').value.trim().toLowerCase()
   let visible = restaurants.filter((r) => filter === 'all' || (filter === 'been' ? hasBeen(r) : !hasBeen(r)))
   if (accessFilter) visible = visible.filter((r) => accessOf(r) === accessFilter)
@@ -203,7 +204,12 @@ function render() {
       [r.name, cuisinesOf(r).join(' '), r.suburb, r.notes, occasionsOf(r).join(' ')].some((v) => v.toLowerCase().includes(query)),
     )
   }
-  visible.sort(compare)
+  return visible.sort(compare)
+}
+
+function render() {
+  renderSummary()
+  const visible = visibleRestaurants()
 
   $('rows').replaceChildren(...visible.map(renderRow))
 
@@ -264,6 +270,7 @@ async function load() {
     loaded = true
     showStatus(null)
     $<HTMLButtonElement>('addBtn').disabled = false
+    $<HTMLButtonElement>('mapBtn').disabled = false
   } catch {
     if (!loaded) $('summary').textContent = 'The list couldn’t load.'
     showStatus('Couldn’t reach the list. Check your connection; it will try again shortly.')
@@ -341,6 +348,7 @@ function openForm(r: Restaurant | null) {
   field('f-name').value = r?.name ?? ''
   field('f-url').value = r?.url ?? ''
   field('f-suburb').value = r?.suburb ?? ''
+  field('f-address').value = r?.address ?? ''
   $<HTMLTextAreaElement>('f-notes').value = r?.notes ?? ''
   field(`f-r${Math.min(5, Math.max(0, r?.rating ?? 0))}`).checked = true
   field({ yes: 'f-ay', outside: 'f-ao', no: 'f-an' }[r ? accessOf(r) : 'no']).checked = true
@@ -400,6 +408,7 @@ function readForm(): RestaurantInput | null {
     url: rawUrl ? safeUrl(rawUrl) : '',
     cuisines: readChoices('food'),
     suburb: field('f-suburb').value.trim(),
+    address: field('f-address').value.trim(),
     rating: Number(form.querySelector<HTMLInputElement>('input[name=rating]:checked')?.value ?? 0),
     accessible: (form.querySelector<HTMLInputElement>('input[name=accessible]:checked')?.value ?? 'no') as Access,
     occasions: readChoices('occ'),
@@ -423,6 +432,7 @@ form.addEventListener('submit', async (e) => {
   if (!data) return
   const save = $<HTMLButtonElement>('saveBtn')
   save.disabled = true
+  save.textContent = 'Saving…'
   try {
     await send(editingId ? 'PUT' : 'POST', editingId, data)
     dialog.close()
@@ -430,6 +440,7 @@ form.addEventListener('submit', async (e) => {
     showFormError((err as Error).message)
   } finally {
     save.disabled = false
+    save.textContent = 'Save'
   }
 })
 
@@ -447,6 +458,117 @@ $('delBtn').addEventListener('click', async () => {
     showFormError((err as Error).message)
   }
 })
+
+// ---- Map ----
+
+const AUSTRALIA: L.LatLngTuple = [-25.3, 133.8]
+const mapDialog = $<HTMLDialogElement>('mapDlg')
+let map: L.Map | null = null
+let pins: L.LayerGroup | null = null
+let locating = false
+let locateRunning = false
+
+const token = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
+function popupFor(r: Restaurant): HTMLElement {
+  const box = el('div')
+  const url = safeUrl(r.url)
+  if (url) {
+    const link = el('a', undefined, r.name)
+    link.href = url
+    link.target = '_blank'
+    link.rel = 'noopener'
+    const title = el('strong')
+    title.append(link)
+    box.append(title)
+  } else {
+    box.append(el('strong', undefined, r.name))
+  }
+  const meta = [cuisinesOf(r).join(', '), r.address || r.suburb].filter(Boolean).join(' · ')
+  if (meta) box.append(el('span', 'pop-meta', meta))
+  box.append(el('span', 'pop-meta', hasBeen(r) ? `${'★'.repeat(r.rating)} ${r.rating}/5` : 'Want to go'))
+  if (r.location?.approx) box.append(el('span', 'pop-meta', 'Pin is the suburb, not the exact spot.'))
+  return box
+}
+
+function drawPins() {
+  if (!map || !pins) return
+  pins.clearLayers()
+  const visible = visibleRestaurants()
+  const mapped = visible.filter((r) => r.location)
+  const colours = { been: token('--accent'), want: token('--want'), approx: token('--muted') }
+  for (const r of mapped) {
+    const { lat, lng, approx } = r.location!
+    L.circleMarker([lat, lng], {
+      radius: 9,
+      color: '#ffffff',
+      weight: 2,
+      dashArray: approx ? '3 3' : undefined,
+      fillColor: approx ? colours.approx : hasBeen(r) ? colours.been : colours.want,
+      fillOpacity: 0.95,
+    })
+      .bindPopup(popupFor(r))
+      .bindTooltip(r.name)
+      .addTo(pins)
+  }
+  if (mapped.length) {
+    map.fitBounds(L.latLngBounds(mapped.map((r) => [r.location!.lat, r.location!.lng] as L.LatLngTuple)), {
+      padding: [40, 40],
+      maxZoom: 15,
+    })
+  } else {
+    map.setView(AUSTRALIA, 4)
+  }
+
+  const missing = visible.length - mapped.length
+  const filtered = visible.length < restaurants.length
+  const parts = [`Showing ${mapped.length} of ${visible.length} ${filtered ? 'filtered ' : ''}place${visible.length === 1 ? '' : 's'}.`]
+  if (locating) parts.push('Finding the rest…')
+  else if (missing) parts.push(`${missing} couldn’t be found. Add an address to ${missing === 1 ? 'it' : 'them'} to get a pin.`)
+  $('mapMsg').textContent = parts.join(' ')
+}
+
+/** Ask the server to look up positions for places that don't have one yet, a few at a time. */
+async function locateMissing() {
+  if (locateRunning) return
+  locateRunning = true
+  try {
+    for (let round = 0; round < 30 && mapDialog.open; round++) {
+      const res = await fetch(`${API}?action=locate`, { method: 'POST' })
+      if (!res.ok) break
+      const data = (await res.json()) as { restaurants: Restaurant[]; remaining: number }
+      restaurants = data.restaurants
+      locating = data.remaining > 0
+      drawPins()
+      if (!locating) break
+    }
+  } catch {
+    // Leave the rest for next time the map opens.
+  } finally {
+    locateRunning = false
+    locating = false
+    render()
+    drawPins()
+  }
+}
+
+$('mapBtn').addEventListener('click', () => {
+  mapDialog.showModal()
+  if (!map) {
+    map = L.map('map', { scrollWheelZoom: true }).setView(AUSTRALIA, 4)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
+    pins = L.layerGroup().addTo(map)
+  }
+  map.invalidateSize()
+  locating = true // until the server says whether anything is left to look up
+  drawPins()
+  // Places added before the map existed (or when the lookup failed) get their positions now.
+  void locateMissing()
+})
+$('mapClose').addEventListener('click', () => mapDialog.close())
 
 // ---- Start ----
 

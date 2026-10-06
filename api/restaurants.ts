@@ -1,5 +1,6 @@
 import { list, put } from '@vercel/blob'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { geocode, geoKey, type GeoPoint } from './_geocode.js'
 
 interface Restaurant {
   id: string
@@ -7,6 +8,11 @@ interface Restaurant {
   url: string
   cuisines: string[]
   suburb: string
+  address: string
+  /** Map position, or null if it couldn't be found. */
+  location: GeoPoint | null
+  /** What `location` was looked up from (see geoKey); '' if not looked up yet. */
+  geoKey: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
   accessible: 'yes' | 'outside' | 'no'
@@ -15,7 +21,12 @@ interface Restaurant {
   dateAdded: string
 }
 
+// Saving can include a map lookup of a second or two, so allow more than the default time.
+export const config = { maxDuration: 60 }
+
 const RESTAURANTS_PATHNAME = 'restaurants.json'
+/** Places looked up per "locate" request, keeping each request well under Vercel's time limit. */
+const LOCATE_BATCH = 3
 
 async function readRestaurants(): Promise<Restaurant[]> {
   const { blobs } = await list({ prefix: RESTAURANTS_PATHNAME, limit: 1 })
@@ -28,6 +39,9 @@ async function readRestaurants(): Promise<Restaurant[]> {
   return stored.map(({ cuisine, ...r }) => ({
     ...r,
     accessible: toAccess(r.accessible),
+    address: r.address ?? '',
+    location: r.location ?? null,
+    geoKey: r.geoKey ?? '',
     cuisines: Array.isArray(r.cuisines) ? r.cuisines : cuisine ? [cuisine] : [],
   }))
 }
@@ -80,10 +94,25 @@ function cleanFields(body: Partial<Restaurant>) {
     url: safeUrl(body.url),
     cuisines: cleanList(body.cuisines),
     suburb: text(body.suburb, 60),
+    address: text(body.address, 200),
     rating: Math.min(5, Math.max(0, rating)),
     accessible: toAccess(body.accessible),
     occasions: cleanList(body.occasions),
     notes: text(body.notes, 1000),
+  }
+}
+
+const needsLocation = (r: Restaurant) => r.geoKey !== geoKey(r)
+
+/** Look up a map position for a restaurant whose name, suburb or address changed. */
+async function locate(r: Restaurant): Promise<Restaurant> {
+  if (!needsLocation(r)) return r
+  try {
+    return { ...r, location: await geocode(r), geoKey: geoKey(r) }
+  } catch (error) {
+    // Geocoder unreachable: keep the old position and leave geoKey stale so it's retried later.
+    console.error('geocode failed', error)
+    return r
   }
 }
 
@@ -95,6 +124,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  if (req.method === 'POST' && req.query.action === 'locate') {
+    // Find positions for a few places that don't have one yet; the map calls this until none remain.
+    const pending = (await readRestaurants()).filter(needsLocation).slice(0, LOCATE_BATCH)
+    const located = new Map<string, Restaurant>()
+    for (const r of pending) {
+      const done = await locate(r)
+      if (!needsLocation(done)) located.set(r.id, done)
+    }
+    // Re-read so edits made while we were geocoding aren't lost.
+    const latest = await readRestaurants()
+    const updated = latest.map((r) => {
+      const done = located.get(r.id)
+      return done && geoKey(done) === geoKey(r) ? { ...r, location: done.location, geoKey: done.geoKey } : r
+    })
+    if (located.size) await writeRestaurants(updated)
+    const remaining = updated.filter(needsLocation).length
+    // If nothing could be looked up (geocoder down), report none left so the map stops asking.
+    res.status(200).json({ restaurants: updated, remaining: located.size || !pending.length ? remaining : 0 })
+    return
+  }
+
   if (req.method === 'POST') {
     const body = req.body as Partial<Restaurant> | undefined
     if (!body || typeof body.name !== 'string' || !body.name.trim()) {
@@ -102,11 +152,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const newRestaurant: Restaurant = {
+    const newRestaurant = await locate({
       id: crypto.randomUUID(),
       ...cleanFields(body),
+      location: null,
+      geoKey: '',
       dateAdded: new Date().toISOString(),
-    }
+    })
 
     const updated = [newRestaurant, ...(await readRestaurants())]
     await writeRestaurants(updated)
@@ -122,15 +174,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const restaurants = await readRestaurants()
-    const index = restaurants.findIndex((restaurant) => restaurant.id === id)
+    const existing = (await readRestaurants()).find((restaurant) => restaurant.id === id)
+    if (!existing) {
+      res.status(404).json({ error: 'Restaurant not found. Someone may have deleted it.' })
+      return
+    }
+    const edited = await locate({ ...existing, ...cleanFields(body) })
+
+    // Re-read in case someone else saved while the location was being looked up.
+    const updated = await readRestaurants()
+    const index = updated.findIndex((restaurant) => restaurant.id === id)
     if (index === -1) {
       res.status(404).json({ error: 'Restaurant not found. Someone may have deleted it.' })
       return
     }
-
-    const updated = [...restaurants]
-    updated[index] = { ...updated[index], ...cleanFields(body) }
+    updated[index] = edited
     await writeRestaurants(updated)
     res.status(200).json(updated)
     return

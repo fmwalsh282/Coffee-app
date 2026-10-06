@@ -22,7 +22,10 @@
           <h1>Places to Eat</h1>
           <p class="summary" id="summary">Loading the list…</p>
         </div>
-        <button class="btn primary" id="addBtn" type="button" disabled>+ Add a restaurant</button>
+        <div class="head-actions">
+          <button class="btn" id="mapBtn" type="button" disabled>Map</button>
+          <button class="btn primary" id="addBtn" type="button" disabled>+ Add a restaurant</button>
+        </div>
       </header>
 
       <div class="toolbar">
@@ -84,6 +87,22 @@
       <p class="status" id="status" hidden></p>
     </div>
 
+    <dialog id="mapDlg" class="map-dialog" aria-labelledby="mapTitle">
+      <div class="map-head">
+        <div>
+          <h2 id="mapTitle">Map</h2>
+          <p class="hint" id="mapMsg"></p>
+        </div>
+        <button type="button" class="btn" id="mapClose">Close</button>
+      </div>
+      <div id="map" class="map"></div>
+      <div class="map-legend">
+        <span><i class="dot been"></i>Been</span>
+        <span><i class="dot want"></i>Want to go</span>
+        <span><i class="dot approx"></i>Suburb only (approximate)</span>
+      </div>
+    </dialog>
+
     <dialog id="dlg">
       <form id="form" method="dialog" novalidate>
         <h2 id="dlgTitle">Add a restaurant</h2>
@@ -94,6 +113,7 @@
           <input id="f-food-other" placeholder="Add a type, e.g. Peruvian, Chinese" maxlength="120" autocomplete="off" aria-label="Add types of food, separated by commas">
         </div>
         <div class="field"><label for="f-suburb">Suburb</label><input id="f-suburb" name="suburb" maxlength="60" list="suburbs" autocomplete="off"></div>
+        <div class="field"><label for="f-address">Address <small class="sub">(optional, for an exact map pin)</small></label><input id="f-address" name="address" maxlength="200" placeholder="e.g. 12 King St" autocomplete="off"></div>
         <datalist id="suburbs"></datalist>
         <div class="field"><span>Rating</span>
           <div class="choice" role="radiogroup" aria-label="Rating">
