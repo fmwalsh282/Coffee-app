@@ -71,6 +71,13 @@ It works the same way as the bean list: the data is one JSON blob
 with no sign-in. No extra setup is needed beyond what the bean list already
 uses. Open pages refresh every 30 seconds to pick up other people's changes.
 
+When adding a restaurant, **Look it up online** takes whatever you've typed
+(name, plus suburb or website if you have them) and fills in the name, type of
+food and website. It calls `api/search-restaurant.ts`, which uses Claude with
+web search, so it needs the same `ANTHROPIC_API_KEY` as the bean search. If
+several places match (a chain, or the same name in different suburbs), you
+pick the right one. Nothing is saved until you press Save.
+
 ## How the online search works
 
 The "Search online" button sends the bean name to `api/search-bean.ts`,

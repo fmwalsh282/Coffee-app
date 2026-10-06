@@ -13,3 +13,10 @@ export interface Restaurant {
 }
 
 export type RestaurantInput = Omit<Restaurant, 'id' | 'dateAdded'>
+
+export interface RestaurantMatch {
+  name: string
+  cuisine: string
+  url: string
+  suburb: string
+}

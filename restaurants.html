@@ -76,6 +76,11 @@
       <form id="form" method="dialog" novalidate>
         <h2 id="dlgTitle">Add a restaurant</h2>
         <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required maxlength="120" autocomplete="off"></div>
+        <div class="lookup">
+          <button type="button" class="btn" id="lookupBtn">Look it up online</button>
+          <p class="hint" id="lookupMsg">Type the name, plus the suburb if you know it. This fills in the name, type of food and website for you.</p>
+          <div class="matches" id="lookupMatches" hidden></div>
+        </div>
         <div class="field"><label for="f-url">Website</label><input id="f-url" name="url" type="url" placeholder="https://…" maxlength="400" autocomplete="off"></div>
         <div class="row2">
           <div class="field"><label for="f-cuisine">Type of food</label><input id="f-cuisine" name="cuisine" maxlength="60" placeholder="e.g. Thai, Italian" list="cuisines" autocomplete="off"></div>

@@ -1,4 +1,4 @@
-import type { Restaurant, RestaurantInput } from './types'
+import type { Restaurant, RestaurantInput, RestaurantMatch } from './types'
 
 type SortKey = 'name' | 'cuisine' | 'suburb' | 'rating' | 'occasions' | 'accessible'
 type Filter = 'all' | 'been' | 'want'
@@ -18,6 +18,8 @@ const PRESET_OCCASIONS = [
   'Drinks',
 ]
 const API = '/api/restaurants'
+const LOOKUP_API = '/api/search-restaurant'
+const LOOKUP_HINT = 'Type the name, plus the suburb if you know it. This fills in the name, type of food and website for you.'
 const REFRESH_MS = 30_000
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T
@@ -332,6 +334,8 @@ function openForm(r: Restaurant | null) {
   })
   field('f-occ-other').value = ''
 
+  resetLookup()
+
   const del = $('delBtn')
   del.hidden = !r
   del.classList.remove('armed')
@@ -372,6 +376,98 @@ function readForm(): RestaurantInput | null {
   }
 }
 
+// ---- Look up name, type of food and website online ----
+
+let lookupRun = 0
+
+function setLookupMessage(message: string, found = false) {
+  const msg = $('lookupMsg')
+  msg.textContent = message
+  msg.classList.toggle('found', found)
+}
+
+function resetLookup() {
+  lookupRun++
+  $<HTMLButtonElement>('lookupBtn').disabled = false
+  $<HTMLButtonElement>('lookupBtn').textContent = 'Look it up online'
+  $('lookupMatches').hidden = true
+  $('lookupMatches').textContent = ''
+  setLookupMessage(LOOKUP_HINT)
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return ''
+  }
+}
+
+function applyMatch(m: RestaurantMatch) {
+  field('f-name').value = m.name
+  if (m.cuisine) field('f-cuisine').value = m.cuisine
+  if (m.url) field('f-url').value = m.url
+  $('lookupMatches').hidden = true
+  const parts = ['name', m.cuisine && 'type of food', m.url && 'website'].filter(Boolean)
+  const filled = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0]
+  const where = m.suburb ? ` (${m.suburb})` : ''
+  setLookupMessage(`Filled in the ${filled} for ${m.name}${where}. Check it looks right before saving.`, true)
+}
+
+async function lookUp() {
+  const name = field('f-name').value.trim()
+  const url = field('f-url').value.trim()
+  if (!name && !url) {
+    setLookupMessage('Type a name first, then look it up.')
+    field('f-name').focus()
+    return
+  }
+  const run = ++lookupRun
+  const button = $<HTMLButtonElement>('lookupBtn')
+  button.disabled = true
+  button.textContent = 'Searching…'
+  $('lookupMatches').hidden = true
+  setLookupMessage('Searching the web. This usually takes 10–30 seconds.')
+  try {
+    const res = await fetch(LOOKUP_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, url, suburb: field('f-suburb').value.trim() }),
+    })
+    const data = (await res.json().catch(() => null)) as { matches?: RestaurantMatch[]; error?: string } | null
+    if (run !== lookupRun) return
+    if (!res.ok) throw new Error(data?.error ?? 'The search didn’t work just now. Try again, or fill the details in yourself.')
+    const matches = data?.matches ?? []
+    if (matches.length === 0) {
+      setLookupMessage('Couldn’t find that restaurant. Check the spelling or add the suburb, then try again.')
+    } else if (matches.length === 1) {
+      applyMatch(matches[0])
+    } else {
+      setLookupMessage('Found a few places with that name. Tap the right one:', true)
+      const box = $('lookupMatches')
+      box.replaceChildren(
+        ...matches.map((m) => {
+          const option = el('button', 'match')
+          option.type = 'button'
+          const details = [m.cuisine, m.suburb, hostOf(m.url)].filter(Boolean).join(' · ')
+          option.append(el('strong', undefined, m.name), el('span', undefined, details))
+          option.addEventListener('click', () => applyMatch(m))
+          return option
+        }),
+      )
+      box.hidden = false
+    }
+  } catch (err) {
+    if (run === lookupRun) setLookupMessage((err as Error).message)
+  } finally {
+    if (run === lookupRun) {
+      button.disabled = false
+      button.textContent = 'Look it up again'
+    }
+  }
+}
+
+$('lookupBtn').addEventListener('click', () => void lookUp())
 $('addBtn').addEventListener('click', () => openForm(null))
 $('cancelBtn').addEventListener('click', () => dialog.close())
 $('rows').addEventListener('click', (e) => {
