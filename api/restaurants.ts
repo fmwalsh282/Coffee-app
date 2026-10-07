@@ -15,7 +15,7 @@ interface Restaurant {
   geoKey: string
   /** 0 means "want to go"; 1-5 is a rating after visiting. */
   rating: number
-  accessible: 'yes' | 'outside' | 'no'
+  accessible: 'yes' | 'no' | 'outside' | 'unsure'
   occasions: string[]
   notes: string
   dateAdded: string
@@ -71,11 +71,12 @@ function safeUrl(value: unknown): string {
   }
 }
 
-/** Older entries stored accessible as true/false. */
+/** Older entries stored accessible as true/false; anything unrecognised is "not sure". */
 function toAccess(value: unknown): Restaurant['accessible'] {
   if (value === true || value === 'yes') return 'yes'
+  if (value === false || value === 'no') return 'no'
   if (value === 'outside') return 'outside'
-  return 'no'
+  return 'unsure'
 }
 
 function cleanList(value: unknown): string[] {

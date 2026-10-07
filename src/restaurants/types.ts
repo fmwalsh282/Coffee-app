@@ -1,4 +1,4 @@
-export type Access = 'yes' | 'outside' | 'no'
+export type Access = 'yes' | 'no' | 'outside' | 'unsure'
 
 export interface Restaurant {
   id: string

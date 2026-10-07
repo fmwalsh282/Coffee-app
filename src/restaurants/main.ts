@@ -73,9 +73,10 @@ const listOf = (value: unknown) => (Array.isArray(value) ? value.filter((v): v i
 const occasionsOf = (r: Restaurant) => listOf(r.occasions)
 const cuisinesOf = (r: Restaurant) => listOf(r.cuisines)
 const hasBeen = (r: Restaurant) => r.rating > 0
-const ACCESS_LABEL: Record<Access, string> = { yes: 'Yes', outside: 'Outside only', no: 'No' }
-const ACCESS_RANK: Record<Access, number> = { yes: 2, outside: 1, no: 0 }
-const accessOf = (r: Restaurant): Access => (r.accessible in ACCESS_LABEL ? r.accessible : 'no')
+const ACCESS_LABEL: Record<Access, string> = { yes: 'Yes', no: 'No', outside: 'Outside', unsure: 'Not sure' }
+/** "Accessible first" order: yes, outside, not sure, no. */
+const ACCESS_RANK: Record<Access, number> = { yes: 3, outside: 2, unsure: 1, no: 0 }
+const accessOf = (r: Restaurant): Access => (r.accessible in ACCESS_LABEL ? r.accessible : 'unsure')
 
 /** Distinct values, first spelling wins, ignoring case. */
 function distinct(values: string[]): string[] {
@@ -351,7 +352,7 @@ function openForm(r: Restaurant | null) {
   field('f-address').value = r?.address ?? ''
   $<HTMLTextAreaElement>('f-notes').value = r?.notes ?? ''
   field(`f-r${Math.min(5, Math.max(0, r?.rating ?? 0))}`).checked = true
-  field({ yes: 'f-ay', outside: 'f-ao', no: 'f-an' }[r ? accessOf(r) : 'no']).checked = true
+  field({ yes: 'f-ay', no: 'f-an', outside: 'f-ao', unsure: 'f-au' }[r ? accessOf(r) : 'unsure']).checked = true
 
   renderChoices('foodChoices', 'food', allCuisines(), r ? cuisinesOf(r) : [])
   renderChoices('occChoices', 'occ', allOccasions(), r ? occasionsOf(r) : [])
@@ -410,7 +411,7 @@ function readForm(): RestaurantInput | null {
     suburb: field('f-suburb').value.trim(),
     address: field('f-address').value.trim(),
     rating: Number(form.querySelector<HTMLInputElement>('input[name=rating]:checked')?.value ?? 0),
-    accessible: (form.querySelector<HTMLInputElement>('input[name=accessible]:checked')?.value ?? 'no') as Access,
+    accessible: (form.querySelector<HTMLInputElement>('input[name=accessible]:checked')?.value ?? 'unsure') as Access,
     occasions: readChoices('occ'),
     notes: $<HTMLTextAreaElement>('f-notes').value.trim(),
   }

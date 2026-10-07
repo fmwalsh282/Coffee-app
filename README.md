@@ -61,7 +61,7 @@ link can add or remove beans.
 A second page, at `/restaurants.html` on the same deployment (for example
 `https://your-app.vercel.app/restaurants.html`), keeps a shared list of
 restaurants you want to try or have been to: name and website, type of food,
-suburb, rating out of 5 (or "want to go"), occasions, whether it's accessible (yes, outside only, or no),
+suburb, rating out of 5 (or "want to go"), occasions, whether it's accessible (yes, no, outside, or not sure),
 and notes. A restaurant can have several types of food (e.g. Peruvian and
 Chinese) and shows up under each one in the Food filter. Every column can be
 sorted, and the list can be filtered by been / want to go, type of food, accessibility,

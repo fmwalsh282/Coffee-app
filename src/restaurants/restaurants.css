@@ -72,6 +72,7 @@ tbody tr:hover td { background: var(--accent-soft); }
 .pill.want { background: var(--want-soft); color: var(--want); }
 .pill.yes { background: var(--accent-soft); color: var(--accent); }
 .pill.outside { background: var(--accent-soft); color: var(--accent); outline: 1px dashed var(--accent); outline-offset: -1px; }
+.pill.unsure { color: var(--muted); font-weight: 400; font-style: italic; outline: 1px dashed var(--line); outline-offset: -1px; }
 .pill.no { color: var(--muted); border: 1px solid var(--line); }
 .notes { color: var(--muted); max-width: 32ch; }
 .tags { display: flex; flex-wrap: wrap; gap: 4px; }
