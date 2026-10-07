@@ -73,7 +73,7 @@ const listOf = (value: unknown) => (Array.isArray(value) ? value.filter((v): v i
 const occasionsOf = (r: Restaurant) => listOf(r.occasions)
 const cuisinesOf = (r: Restaurant) => listOf(r.cuisines)
 const hasBeen = (r: Restaurant) => r.rating > 0
-const ACCESS_LABEL: Record<Access, string> = { yes: 'Yes', no: 'No', outside: 'Outside', unsure: 'Not sure' }
+const ACCESS_LABEL: Record<Access, string> = { yes: 'Yes', no: 'No', outside: 'Outside only', unsure: 'Not sure' }
 /** "Accessible first" order: yes, outside, not sure, no. */
 const ACCESS_RANK: Record<Access, number> = { yes: 3, outside: 2, unsure: 1, no: 0 }
 const accessOf = (r: Restaurant): Access => (r.accessible in ACCESS_LABEL ? r.accessible : 'unsure')
